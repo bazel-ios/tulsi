@@ -23,7 +23,8 @@ load(
     _AppleBundleInfo = "AppleBundleInfo",
     _IosApplicationBundleInfo = "IosApplicationBundleInfo",
     _IosExtensionBundleInfo = "IosExtensionBundleInfo",
-    _AppleResourceInfo = "AppleResourceInfo"
+    _AppleResourceInfo = "AppleResourceInfo",
+    _AppleResourceBundleInfo = "AppleResourceBundleInfo"
 )
 load(
     "@build_bazel_rules_apple//apple/testing:apple_test_rules.bzl",
@@ -44,6 +45,7 @@ AppleTestInfo = _AppleTestInfo
 IosApplicationBundleInfo = _IosApplicationBundleInfo
 
 AppleResourceInfo = _AppleResourceInfo
+AppleResourceBundleInfo = _AppleResourceBundleInfo
 
 >>>>>>> 13cb9216 (Collect unprocessed data resources)
 IosExtensionBundleInfo = _IosExtensionBundleInfo
