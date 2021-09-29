@@ -460,10 +460,28 @@ class BazelBuildBridge(object):
     self.direct_debug_prefix_map = False
     self.normalized_prefix_map = False
 
+<<<<<<< HEAD
     self.update_symbol_cache = None
     if os.environ.get('TULSI_USE_BAZEL_CACHE_READER') is not None:
       self.update_symbol_cache = UpdateSymbolCache()
 
+||||||| parent of 018d527d (Add support for ios_sim_arm64 CPU type)
+    self.update_symbol_cache = UpdateSymbolCache()
+
+    # Target architecture.  Must be defined for correct setting of
+    # the --cpu flag. Note that Xcode will set multiple values in
+    # ARCHS when building for a Generic Device.
+    archs = os.environ.get('ARCHS')
+    if not archs:
+      _PrintXcodeError('Tulsi requires env variable ARCHS to be '
+                       'set.  Please file a bug against Tulsi.')
+      sys.exit(1)
+    self.arch = archs.split()[-1]
+
+=======
+    self.update_symbol_cache = UpdateSymbolCache()
+
+>>>>>>> 018d527d (Add support for ios_sim_arm64 CPU type)
     # Path into which generated artifacts should be copied.
     self.built_products_dir = os.environ['BUILT_PRODUCTS_DIR']
     # Path where Xcode expects generated sources to be placed.
@@ -514,6 +532,20 @@ class BazelBuildBridge(object):
 
     self.is_simulator = self.platform_name.endswith('simulator')
     self.codesigning_allowed = not self.is_simulator
+
+    # Target architecture.  Must be defined for correct setting of
+    # the --cpu flag. Note that Xcode will set multiple values in
+    # ARCHS when building for a Generic Device.
+    archs = os.environ.get('ARCHS')
+    if not archs:
+      _PrintXcodeError('Tulsi requires env variable ARCHS to be '
+                       'set.  Please file a bug against Tulsi.')
+      sys.exit(1)
+    arch = archs.split()[-1]
+    if self.is_simulator and arch == "arm64":
+      self.arch = "sim_" + arch
+    else:
+      self.arch = arch
 
     # Target architecture.  Must be defined for correct setting of
     # the --cpu flag. Note that Xcode will set multiple values in
