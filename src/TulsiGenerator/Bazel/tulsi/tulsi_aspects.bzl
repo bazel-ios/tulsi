@@ -219,6 +219,22 @@ def _is_file_external(f):
     """Returns True if the given file is an external file."""
     return f.owner.workspace_root != ""
 
+def _is_file_a_directory(f):
+    """Returns True is the given file is a directory."""
+    # Starting Bazel 3.3.0, the File type as a is_directory attribute.
+    if getattr(f, "is_directory", None):
+        return f.is_directory
+    # If is_directory is not in the File type, fall back to the old method:
+    # As of Oct. 2016, Bazel disallows most files without extensions.
+    # As a temporary hack, Tulsi treats File instances pointing at extension-less
+    # paths as directories. This is extremely fragile and must be replaced with
+    # logic properly homed in Bazel.
+    return (f.basename.find(".") == -1)
+
+def _is_file_external(f):
+    """Returns True if the given file is an external file."""
+    return f.owner.workspace_root != ""
+
 def _file_metadata(f):
     """Returns metadata about a given File."""
     if not f:
@@ -389,7 +405,7 @@ def _collect_asset_catalogs(rule_attr):
 
 def _collect_bundle_imports(rule_attr):
     """Extracts bundle directories from the given rule attributes."""
-    
+
     bundle_paths = _collect_bundle_paths(
         rule_attr,
         ["bundle_imports", "settings_bundle"],
@@ -722,6 +738,22 @@ def _collect_clang_modules(target):
 
     return struct(module_maps = module_maps, precompiled_modules = precompiled_modules)
 
+
+def _collect_module_maps(target):
+    """Returns a list of Clang module maps found on the given target."""
+    return [
+        module.clang.module_map
+        for module in target[SwiftInfo].transitive_modules.to_list()
+        if module.clang
+    ]
+
+def _collect_module_maps(target):
+    """Returns a list of Clang module maps found on the given target."""
+    return [
+        module.clang.module_map
+        for module in target[SwiftInfo].transitive_modules.to_list()
+        if module.clang and type(module.clang.module_map) == "File"
+    ]
 def _collect_objc_strict_includes(target, rule_attr):
     """Returns a depset of strict includes found on the deps of given target."""
     depsets = []
@@ -762,6 +794,7 @@ def collect_swift_version(copts):
             last_swift_version = copts[i + 1]
 
     return last_swift_version
+
 
 def _target_filtering_info(ctx):
     """Returns filtering information for test rules."""
