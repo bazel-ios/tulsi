@@ -26,6 +26,7 @@ load(
     "IosApplicationBundleInfo",
     "AppleResourceInfo",
     "AppleResourceBundleInfo",
+    "IosApplicationBundleInfo",
     "IosExtensionBundleInfo",
     "SwiftInfo",
 )
@@ -47,6 +48,58 @@ UNSUPPORTED_FEATURES = [
     "use_header_modules",
     "fdo_instrument",
     "fdo_optimize",
+]
+
+<<<<<<< HEAD
+||||||| parent of c9b533f4 (sync with bazelbuild/tulsi(396adfa3c65a930f354f29c7d714a4be321ec96b) (#34))
+# List of all of the attributes that can link from a Tulsi-supported rule to a
+# Tulsi-supported dependency of that rule.
+# For instance, an ios_application's "binary" attribute might link to an
+# objc_binary rule which in turn might have objc_library's in its "deps"
+# attribute.
+_TULSI_COMPILE_DEPS = [
+    "bundles",
+    "deps",
+    "extension",
+    "extensions",
+    "frameworks",
+    "settings_bundle",
+    "srcs",  # To propagate down onto rules which generate source files.
+    "tests",  # for test_suite when the --noexpand_test_suites flag is used.
+    "_implicit_tests",  # test_suites without a `tests` attr have an '$implicit_tests' attr instead.
+    "test_host",
+    "additional_contents",  # macos_application can specify a dict with supported rules as keys.
+    # Special attribute name which serves as an escape hatch intended for custom
+    # rule creators who use non-standard attribute names for rule dependencies
+    # and want those dependencies to show up in Xcode.
+    "tulsi_deps",
+    "watch_application",
+]
+
+=======
+# List of all of the attributes that can link from a Tulsi-supported rule to a
+# Tulsi-supported dependency of that rule.
+# For instance, an ios_application's "binary" attribute might link to an
+# objc_binary rule which in turn might have objc_library's in its "deps"
+# attribute.
+_TULSI_COMPILE_DEPS = [
+    "app_clips",  # For ios_application which can include app clips.
+    "bundles",
+    "deps",
+    "extension",
+    "extensions",
+    "frameworks",
+    "settings_bundle",
+    "srcs",  # To propagate down onto rules which generate source files.
+    "tests",  # for test_suite when the --noexpand_test_suites flag is used.
+    "_implicit_tests",  # test_suites without a `tests` attr have an '$implicit_tests' attr instead.
+    "test_host",
+    "additional_contents",  # macos_application can specify a dict with supported rules as keys.
+    # Special attribute name which serves as an escape hatch intended for custom
+    # rule creators who use non-standard attribute names for rule dependencies
+    # and want those dependencies to show up in Xcode.
+    "tulsi_deps",
+    "watch_application",
 ]
 
 # These are attributes that contain bundles but should not be considered as
@@ -203,6 +256,7 @@ def _convert_outpath_to_symlink_path(path):
         return "bazel-tulsi-includes/x/x/" + "/".join(components[3:])
     return path
 
+<<<<<<< HEAD
 def _is_file_a_directory(f):
     """Returns True is the given file is a directory."""
     # Starting Bazel 3.3.0, the File type as a is_directory attribute.
@@ -218,6 +272,10 @@ def _is_file_a_directory(f):
 def _is_file_external(f):
     """Returns True if the given file is an external file."""
     return f.owner.workspace_root != ""
+
+def _is_bazel_external_file(f):
+    """Returns True if the given file is a Bazel external file."""
+    return f.path.startswith("external/")
 
 def _is_file_a_directory(f):
     """Returns True is the given file is a directory."""
@@ -794,7 +852,6 @@ def collect_swift_version(copts):
             last_swift_version = copts[i + 1]
 
     return last_swift_version
-
 
 def _target_filtering_info(ctx):
     """Returns filtering information for test rules."""
@@ -1379,6 +1436,7 @@ tulsi_sources_aspect = aspect(
         )),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
+    incompatible_use_toolchain_transition = True,
     fragments = [
         "apple",
         "cpp",
