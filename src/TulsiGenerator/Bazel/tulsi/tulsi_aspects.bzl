@@ -243,7 +243,9 @@ def _file_metadata(f):
     # Special case handling for external files.
     is_external = _is_file_external(f)
 
-    out_path = f.path if is_external else f.short_path
+    # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
+    # out_path = f.path if is_external else f.short_path
+    out_path = f.path
     if not f.is_source and not is_external:
         root_path = f.root.path
         symlink_path = _convert_outpath_to_symlink_path(root_path)
@@ -621,7 +623,7 @@ def _collect_secondary_artifacts(target, ctx):
     """Returns a list of file metadatas for implicit outputs of 'target'."""
     artifacts = []
     if AppleBundleInfo in target:
-        infoplist = target[AppleBundleInfo].infoplist
+        infoplist = getattr(target[AppleBundleInfo], "infoplist", None)
 
         if infoplist:
             artifacts.append(_file_metadata(infoplist))
@@ -656,8 +658,8 @@ def _get_deployment_info(target, ctx):
     """Returns (platform_type, minimum_os_version) for the given target."""
     if AppleBundleInfo in target:
         apple_bundle_provider = target[AppleBundleInfo]
-        minimum_os_version = apple_bundle_provider.minimum_os_version
-        platform_type = apple_bundle_provider.platform_type
+        minimum_os_version = getattr(apple_bundle_provider, "minimum_os_version", None)
+        platform_type = getattr(apple_bundle_provider, "platform_type", None)
         return (platform_type, minimum_os_version)
 
     attr_platform_type = _get_platform_type(ctx)
@@ -926,7 +928,7 @@ def _tulsi_sources_aspect(target, ctx):
 
         bundle_name = apple_bundle_provider.bundle_name
         bundle_id = apple_bundle_provider.bundle_id
-        product_type = apple_bundle_provider.product_type
+        product_type = getattr(apple_bundle_provider, "product_type", None)
 
         # We only need the infoplist from iOS extension targets.
         infoplist = apple_bundle_provider.infoplist if IosExtensionBundleInfo in target else None
@@ -996,6 +998,8 @@ def _tulsi_sources_aspect(target, ctx):
     non_arc_srcs = _collect_files(rule, "attr.non_arc_srcs")
 
     # Collect test information.
+    # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
+    module_name = getattr(ctx.rule.attr, "name", None)
     if AppleTestInfo in target:
         provider = target[AppleTestInfo]
         srcs = _depset_to_file_metadata_list(provider.sources)
@@ -1014,8 +1018,9 @@ def _tulsi_sources_aspect(target, ctx):
             swift_info = target[SwiftInfo]
             if swift_info.direct_modules:
                 module_name = swift_info.direct_modules[0].name
-        else:
-            module_name = None
+        # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
+        # else:
+        #     module_name = None
 
     info = _struct_omitting_none(
         artifacts = artifacts,
@@ -1085,14 +1090,16 @@ def _collect_bundle_info(target):
     """Returns Apple bundle info for the given target, None if not a bundle."""
     if AppleBundleInfo in target:
         apple_bundle = target[AppleBundleInfo]
-        has_dsym = _has_dsym(target)
-        return struct(
-            archive_root = apple_bundle.archive_root,
-            dsym_path = _bundle_dsym_path(apple_bundle),
-            bundle_name = apple_bundle.bundle_name,
-            bundle_extension = apple_bundle.bundle_extension,
-            has_dsym = has_dsym,
-        )
+        # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
+        if apple_bundle.bundle_extension != "framework":
+            has_dsym = _has_dsym(target)
+            return struct(
+                archive_root = apple_bundle.archive_root,
+                dsym_path = _bundle_dsym_path(apple_bundle),
+                bundle_name = apple_bundle.bundle_name,
+                bundle_extension = apple_bundle.bundle_extension,
+                has_dsym = has_dsym,
+            )
 
     return None
 
@@ -1222,10 +1229,12 @@ def _tulsi_outputs_aspect(target, ctx):
     if AppleBundleInfo in target:
         bundle_info = target[AppleBundleInfo]
 
-        artifact = bundle_info.archive.path
-        dsym_path = _bundle_dsym_path(bundle_info)
-        archive_root = bundle_info.archive_root
-        infoplist = bundle_info.infoplist
+        # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
+        if bundle_info.bundle_extension != "framework":
+            artifact = bundle_info.archive.path
+            dsym_path = _bundle_dsym_path(bundle_info)
+            archive_root = bundle_info.archive_root
+            infoplist = bundle_info.infoplist
 
         bundle_name = bundle_info.bundle_name
     elif AppleBinaryInfo in target:
