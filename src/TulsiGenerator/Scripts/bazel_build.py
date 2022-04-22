@@ -460,12 +460,10 @@ class BazelBuildBridge(object):
     self.direct_debug_prefix_map = False
     self.normalized_prefix_map = False
 
-<<<<<<< HEAD
     self.update_symbol_cache = None
     if os.environ.get('TULSI_USE_BAZEL_CACHE_READER') is not None:
       self.update_symbol_cache = UpdateSymbolCache()
 
-||||||| parent of 018d527d (Add support for ios_sim_arm64 CPU type)
     self.update_symbol_cache = UpdateSymbolCache()
 
     # Target architecture.  Must be defined for correct setting of
@@ -478,10 +476,6 @@ class BazelBuildBridge(object):
       sys.exit(1)
     self.arch = archs.split()[-1]
 
-=======
-    self.update_symbol_cache = UpdateSymbolCache()
-
->>>>>>> 018d527d (Add support for ios_sim_arm64 CPU type)
     # Path into which generated artifacts should be copied.
     self.built_products_dir = os.environ['BUILT_PRODUCTS_DIR']
     # Path where Xcode expects generated sources to be placed.
@@ -594,7 +588,10 @@ class BazelBuildBridge(object):
     self.bazel_bin_path = os.path.abspath(parser.bazel_bin_path)
     self.bazel_executable = parser.bazel_executable
     self.bazel_exec_root = self.build_settings.bazelExecRoot
-    self.bazel_output_base = self.build_settings.bazelOutputBase
+    bazelOutputBase = os.path.dirname(os.path.dirname(self.build_settings.bazelExecRoot))
+    self.bazel_output_base = bazelOutputBase
+    # FIXME:(jmarino)
+    #self.bazel_output_base = self.build_settings.bazelOutputBase
 
     # Update feature flags.
     features = parser.GetEnabledFeatures()

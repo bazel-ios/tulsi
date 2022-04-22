@@ -46,9 +46,7 @@ IosApplicationBundleInfo = _IosApplicationBundleInfo
 
 AppleResourceInfo = _AppleResourceInfo
 AppleResourceBundleInfo = _AppleResourceBundleInfo
-IosApplicationBundleInfo = _IosApplicationBundleInfo
 
->>>>>>> 13cb9216 (Collect unprocessed data resources)
 IosExtensionBundleInfo = _IosExtensionBundleInfo
 
 SwiftInfo = _SwiftInfo

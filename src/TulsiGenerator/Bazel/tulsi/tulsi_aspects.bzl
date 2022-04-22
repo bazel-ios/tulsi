@@ -26,7 +26,6 @@ load(
     "IosApplicationBundleInfo",
     "AppleResourceInfo",
     "AppleResourceBundleInfo",
-    "IosApplicationBundleInfo",
     "IosExtensionBundleInfo",
     "SwiftInfo",
 )
@@ -48,58 +47,6 @@ UNSUPPORTED_FEATURES = [
     "use_header_modules",
     "fdo_instrument",
     "fdo_optimize",
-]
-
-<<<<<<< HEAD
-||||||| parent of c9b533f4 (sync with bazelbuild/tulsi(396adfa3c65a930f354f29c7d714a4be321ec96b) (#34))
-# List of all of the attributes that can link from a Tulsi-supported rule to a
-# Tulsi-supported dependency of that rule.
-# For instance, an ios_application's "binary" attribute might link to an
-# objc_binary rule which in turn might have objc_library's in its "deps"
-# attribute.
-_TULSI_COMPILE_DEPS = [
-    "bundles",
-    "deps",
-    "extension",
-    "extensions",
-    "frameworks",
-    "settings_bundle",
-    "srcs",  # To propagate down onto rules which generate source files.
-    "tests",  # for test_suite when the --noexpand_test_suites flag is used.
-    "_implicit_tests",  # test_suites without a `tests` attr have an '$implicit_tests' attr instead.
-    "test_host",
-    "additional_contents",  # macos_application can specify a dict with supported rules as keys.
-    # Special attribute name which serves as an escape hatch intended for custom
-    # rule creators who use non-standard attribute names for rule dependencies
-    # and want those dependencies to show up in Xcode.
-    "tulsi_deps",
-    "watch_application",
-]
-
-=======
-# List of all of the attributes that can link from a Tulsi-supported rule to a
-# Tulsi-supported dependency of that rule.
-# For instance, an ios_application's "binary" attribute might link to an
-# objc_binary rule which in turn might have objc_library's in its "deps"
-# attribute.
-_TULSI_COMPILE_DEPS = [
-    "app_clips",  # For ios_application which can include app clips.
-    "bundles",
-    "deps",
-    "extension",
-    "extensions",
-    "frameworks",
-    "settings_bundle",
-    "srcs",  # To propagate down onto rules which generate source files.
-    "tests",  # for test_suite when the --noexpand_test_suites flag is used.
-    "_implicit_tests",  # test_suites without a `tests` attr have an '$implicit_tests' attr instead.
-    "test_host",
-    "additional_contents",  # macos_application can specify a dict with supported rules as keys.
-    # Special attribute name which serves as an escape hatch intended for custom
-    # rule creators who use non-standard attribute names for rule dependencies
-    # and want those dependencies to show up in Xcode.
-    "tulsi_deps",
-    "watch_application",
 ]
 
 # These are attributes that contain bundles but should not be considered as
@@ -256,7 +203,6 @@ def _convert_outpath_to_symlink_path(path):
         return "bazel-tulsi-includes/x/x/" + "/".join(components[3:])
     return path
 
-<<<<<<< HEAD
 def _is_file_a_directory(f):
     """Returns True is the given file is a directory."""
     # Starting Bazel 3.3.0, the File type as a is_directory attribute.
@@ -276,22 +222,6 @@ def _is_file_external(f):
 def _is_bazel_external_file(f):
     """Returns True if the given file is a Bazel external file."""
     return f.path.startswith("external/")
-
-def _is_file_a_directory(f):
-    """Returns True is the given file is a directory."""
-    # Starting Bazel 3.3.0, the File type as a is_directory attribute.
-    if getattr(f, "is_directory", None):
-        return f.is_directory
-    # If is_directory is not in the File type, fall back to the old method:
-    # As of Oct. 2016, Bazel disallows most files without extensions.
-    # As a temporary hack, Tulsi treats File instances pointing at extension-less
-    # paths as directories. This is extremely fragile and must be replaced with
-    # logic properly homed in Bazel.
-    return (f.basename.find(".") == -1)
-
-def _is_file_external(f):
-    """Returns True if the given file is an external file."""
-    return f.owner.workspace_root != ""
 
 def _file_metadata(f):
     """Returns metadata about a given File."""
@@ -804,14 +734,6 @@ def _collect_module_maps(target):
     return [
         module.clang.module_map
         for module in target[SwiftInfo].transitive_modules.to_list()
-        if module.clang
-    ]
-
-def _collect_module_maps(target):
-    """Returns a list of Clang module maps found on the given target."""
-    return [
-        module.clang.module_map
-        for module in target[SwiftInfo].transitive_modules.to_list()
         if module.clang and type(module.clang.module_map) == "File"
     ]
 def _collect_objc_strict_includes(target, rule_attr):
@@ -1184,8 +1106,7 @@ def _collect_bundle_info(target):
     """Returns Apple bundle info for the given target, None if not a bundle."""
     if AppleBundleInfo in target:
         apple_bundle = target[AppleBundleInfo]
-        # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
-        if apple_bundle.bundle_extension != "framework":
+        if hasattr(apple_bundle, "bundle_extension") and apple_bundle.bundle_extension != "framework":
             has_dsym = _has_dsym(target)
             return struct(
                 archive_root = apple_bundle.archive_root,
@@ -1329,7 +1250,7 @@ def _tulsi_outputs_aspect(target, ctx):
         bundle_info = target[AppleBundleInfo]
 
         # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
-        if bundle_info.bundle_extension != "framework":
+        if hasattr(bundle_info, "bundle_extension") and bundle_info.bundle_extension != "framework":
             artifact = bundle_info.archive.path
             dsym_path = _bundle_dsym_path(bundle_info)
             archive_root = bundle_info.archive_root

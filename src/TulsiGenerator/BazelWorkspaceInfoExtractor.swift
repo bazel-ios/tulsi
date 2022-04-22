@@ -31,7 +31,6 @@ public final class BazelWorkspaceInfoExtractor: BazelWorkspaceInfoExtractorProto
     return workspacePathInfoFetcher.getBazelBinPath()
   }
 
-<<<<<<< HEAD
   /// Returns the absolute path to the execution root for this Bazel workspace. This may block.
   public var bazelExecutionRoot: String {
     return workspacePathInfoFetcher.getExecutionRoot()
