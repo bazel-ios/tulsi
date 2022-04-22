@@ -588,10 +588,7 @@ class BazelBuildBridge(object):
     self.bazel_bin_path = os.path.abspath(parser.bazel_bin_path)
     self.bazel_executable = parser.bazel_executable
     self.bazel_exec_root = self.build_settings.bazelExecRoot
-    bazelOutputBase = os.path.dirname(os.path.dirname(self.build_settings.bazelExecRoot))
-    self.bazel_output_base = bazelOutputBase
-    # FIXME:(jmarino)
-    #self.bazel_output_base = self.build_settings.bazelOutputBase
+    self.bazel_output_base = self.build_settings.bazelOutputBase
 
     # Update feature flags.
     features = parser.GetEnabledFeatures()

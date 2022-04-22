@@ -1014,8 +1014,22 @@ def _tulsi_sources_aspect(target, ctx):
     non_arc_srcs = _collect_files(rule, "attr.non_arc_srcs")
 
     # Collect test information.
+    module_name = None
     # FIX-ME: Temporary hack to make it work with rules_ios, revert once the root cause is found and resolved
-    module_name = getattr(ctx.rule.attr, "name", None)
+    if SwiftInfo in target:
+            swift_info = target[SwiftInfo]
+            if swift_info.direct_modules:
+                module_name = swift_info.direct_modules[0].name
+
+    query_deps_for_module_name = rule.kind == "apple_framework_packaging"
+    if not module_name or query_deps_for_module_name:
+        for dep in _collect_dependencies(rule_attr, "deps"):
+          if SwiftInfo in target:
+            swift_info = target[SwiftInfo]
+            if swift_info.direct_modules:
+                module_name = swift_info.direct_modules[0].name
+                break
+
     if AppleTestInfo in target:
         provider = target[AppleTestInfo]
         srcs = _depset_to_file_metadata_list(provider.sources)
@@ -1024,7 +1038,7 @@ def _tulsi_sources_aspect(target, ctx):
         swift_transitive_modules = _depset_to_file_metadata_list(provider.swift_modules)
         objc_module_maps = _depset_to_file_metadata_list(provider.module_maps)
         test_deps = provider.deps.to_list()
-        module_name = _get_opt_attr(provider, "module_name")
+        module_name =  _get_opt_attr(provider, "module_name") if not module_name else module_name
     else:
         swift_transitive_modules = swift_transitive_modules.to_list()
         objc_module_maps = objc_module_maps.to_list()
