@@ -23,6 +23,8 @@ load(
     _AppleBundleInfo = "AppleBundleInfo",
     _IosApplicationBundleInfo = "IosApplicationBundleInfo",
     _IosExtensionBundleInfo = "IosExtensionBundleInfo",
+    _AppleResourceInfo = "AppleResourceInfo",
+    _AppleResourceBundleInfo = "AppleResourceBundleInfo"
 )
 load(
     "@build_bazel_rules_apple//apple/testing:apple_test_rules.bzl",
@@ -41,6 +43,9 @@ AppleBundleInfo = _AppleBundleInfo
 AppleTestInfo = _AppleTestInfo
 
 IosApplicationBundleInfo = _IosApplicationBundleInfo
+
+AppleResourceInfo = _AppleResourceInfo
+AppleResourceBundleInfo = _AppleResourceBundleInfo
 
 IosExtensionBundleInfo = _IosExtensionBundleInfo
 

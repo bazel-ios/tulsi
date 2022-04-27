@@ -227,8 +227,6 @@ class CodesignBundleAttributes(object):
 class _OptionsParser(object):
   """Handles parsing script options."""
 
-  # List of all supported Xcode configurations.
-  KNOWN_CONFIGS = ['Debug', 'Release']
 
   def __init__(self, build_settings, sdk_version, platform_name, arch):
     self.targets = []
@@ -466,6 +464,18 @@ class BazelBuildBridge(object):
     if os.environ.get('TULSI_USE_BAZEL_CACHE_READER') is not None:
       self.update_symbol_cache = UpdateSymbolCache()
 
+    self.update_symbol_cache = UpdateSymbolCache()
+
+    # Target architecture.  Must be defined for correct setting of
+    # the --cpu flag. Note that Xcode will set multiple values in
+    # ARCHS when building for a Generic Device.
+    archs = os.environ.get('ARCHS')
+    if not archs:
+      _PrintXcodeError('Tulsi requires env variable ARCHS to be '
+                       'set.  Please file a bug against Tulsi.')
+      sys.exit(1)
+    self.arch = archs.split()[-1]
+
     # Path into which generated artifacts should be copied.
     self.built_products_dir = os.environ['BUILT_PRODUCTS_DIR']
     # Path where Xcode expects generated sources to be placed.
@@ -516,6 +526,20 @@ class BazelBuildBridge(object):
 
     self.is_simulator = self.platform_name.endswith('simulator')
     self.codesigning_allowed = not self.is_simulator
+
+    # Target architecture.  Must be defined for correct setting of
+    # the --cpu flag. Note that Xcode will set multiple values in
+    # ARCHS when building for a Generic Device.
+    archs = os.environ.get('ARCHS')
+    if not archs:
+      _PrintXcodeError('Tulsi requires env variable ARCHS to be '
+                       'set.  Please file a bug against Tulsi.')
+      sys.exit(1)
+    arch = archs.split()[-1]
+    if self.is_simulator and arch == "arm64":
+      self.arch = "sim_" + arch
+    else:
+      self.arch = arch
 
     # Target architecture.  Must be defined for correct setting of
     # the --cpu flag. Note that Xcode will set multiple values in
@@ -709,10 +733,6 @@ class BazelBuildBridge(object):
                        '"Testing" instead.' % configuration)
       return (None, 1)
 
-    if configuration not in _OptionsParser.KNOWN_CONFIGS:
-      _PrintXcodeError('Unknown build configuration "%s"' % configuration)
-      return (None, 1)
-
     bazel, start_up, build = options.GetBazelOptions(configuration)
     bazel_command = [bazel]
     bazel_command.extend(start_up)
@@ -775,7 +795,10 @@ class BazelBuildBridge(object):
           output_line = '%s: %s' % (xcode_label, match.group(2))
       return output_line
 
-    if self.workspace_root != self.project_dir:
+    #if self.workspace_root != self.project_dir:
+    # Always patch outputs for XCHammer.
+    # if self.workspace_root != self.project_dir:
+    if True:
       # Match (likely) filename:line_number: lines.
       xcode_parsable_line_regex = re.compile(r'([^/][^:]+):\d+:')
 
@@ -896,6 +919,13 @@ class BazelBuildBridge(object):
       outputs_data.append(output_data)
     return 0, outputs_data
 
+  def _GetBundleSourceLocation(self, artifact_archive_root, bundle_subpath):
+    if not artifact_archive_root or not bundle_subpath:
+      return None
+
+    source_location = os.path.join(artifact_archive_root, bundle_subpath)
+    return source_location if os.path.isdir(source_location) else None
+
   def _InstallArtifact(self, outputs_data):
     """Installs Bazel-generated artifacts into the Xcode output directory."""
     xcode_artifact_path = self.artifact_output_path
@@ -944,8 +974,12 @@ class BazelBuildBridge(object):
       # ipa/zip in order to help preserve timestamps. Note that the archive root
       # is only present for local builds; for remote builds we must extract from
       # the zip file.
-      if self._IsValidArtifactArchiveRoot(artifact_archive_root, bundle_name):
-        source_location = os.path.join(artifact_archive_root, bundle_subpath)
+      source_location = self._GetBundleSourceLocation(artifact_archive_root, bundle_subpath)
+      if source_location:
+        exit_code = self._RsyncBundle(os.path.basename(primary_artifact),
+                                      source_location,
+                                      xcode_artifact_path)
+      elif self._IsValidArtifactArchiveRoot(artifact_archive_root, bundle_name):
         exit_code = self._RsyncBundle(os.path.basename(primary_artifact),
                                       source_location,
                                       xcode_artifact_path)
@@ -1164,14 +1198,12 @@ class BazelBuildBridge(object):
       full_source_path += '/'
 
     try:
-      # Use -c to check differences by checksum, -v for verbose,
-      # and --delete to delete stale files.
+      # Use -c to check differences by checksum, -v for verbose
       # The rest of the flags are the same as -a but without preserving
       # timestamps, which is done intentionally so the timestamp will
       # only change when the file is changed.
       subprocess.check_output(['rsync',
                                '-vcrlpgoD',
-                               '--delete',
                                full_source_path,
                                output_path],
                               stderr=subprocess.STDOUT)
@@ -1778,6 +1810,14 @@ class BazelBuildBridge(object):
     """
     return os.path.normpath(path) + os.sep
 
+  def _ExtractCachableTargetSourceMap(self, normalize=True):
+      """ Return a cacheable source Map
+      Expect all builds to write the same debug info to all object files
+      """
+      # Map the local sources to the __BAZEL_WORKSPACE_DIR__
+      cache_dir = "./"
+      return (cache_dir, self.workspace_root)
+
   def _ExtractTargetSourceMap(self, normalize=True):
     """Extracts the source path as a tuple associated with the WORKSPACE path.
 
@@ -1793,6 +1833,9 @@ class BazelBuildBridge(object):
                   the paths to Xcode-visible sources used for the purposes
                   of Tulsi debugging as strings ($1).
     """
+    if os.environ.get('HAMMER_USE_DEBUG_INFO_REMAPPING', 'NO') == 'YES':
+      return self._ExtractCachableTargetSourceMap(normalize=normalize)
+
     # All paths route to the "workspace root" for sources visible from Xcode.
     sm_destpath = self.workspace_root
     if normalize:
