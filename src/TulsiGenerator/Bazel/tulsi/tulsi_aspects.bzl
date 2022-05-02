@@ -59,12 +59,11 @@ _TULSI_NON_EMBEDDEDABLE_ATTRS = [
 
 # List of all attributes whose contents should resolve to "support" files; files
 # that are used by Bazel to build but do not need special handling in the
-# generated Xcode project. For example, Info.plist and entitlements files.
+# generated Xcode project. For example, provisioning profiles and entitlements files.
 _SUPPORTING_FILE_ATTRIBUTES = [
     "app_icons",
     "data",
     "entitlements",
-    "infoplists",
     "provisioning_profile",
     "resources",
     "strings",
@@ -341,6 +340,16 @@ def _collect_first_file(obj, attr_path):
     if not files:
         return None
     return files[0]
+
+def _collect_infoplists_files(rule_attr, convert_to_metadata = True):
+    """Extracts files coming from 'data' attribute"""
+    return _collect_files(
+        rule_attr,
+        "infoplists",
+        convert_to_metadata = convert_to_metadata,
+        exclude_xcdatamodel = True,
+        exclude_xcassets = False,
+    )
 
 def _collect_supporting_files(rule_attr, convert_to_metadata = True):
     """Extracts 'supporting' files from the given rule attributes."""
@@ -892,6 +901,7 @@ def _tulsi_sources_aspect(target, ctx):
         swiftc_opts= expanded_copts if is_swift_library else None,
         datamodels=datamodels,
         supporting_files=supporting_files,
+        info_plists=_collect_infoplists_files(rule_attr),
         test_host=_get_label_attr(rule_attr, "test_host.label"),
         structured_resources=structured_resources,
         archives=_extract_archives(rule_attr),
@@ -1331,6 +1341,7 @@ def _tulsi_outputs_aspect(target, ctx):
     source_files.extend(_collect_artifacts(rule, "attr.hdrs"))
     source_files.extend(_collect_artifacts(rule, "attr.textual_hdrs"))
     source_files.extend(_collect_supporting_files(rule_attr, convert_to_metadata = False))
+    source_files.extend(_collect_infoplists_files(rule_attr, convert_to_metadata = False))
 
     all_files = depset(source_files, transitive = all_files_depsets)
 
