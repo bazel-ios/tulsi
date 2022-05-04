@@ -178,6 +178,7 @@ public final class RuleEntry: RuleInfo {
     case structured_resources
     case data
     case weak_sdk_frameworks
+    case info_plists
   }
 
   /// Bazel attributes for this rule (e.g., "binary": <some label> on an ios_application).
