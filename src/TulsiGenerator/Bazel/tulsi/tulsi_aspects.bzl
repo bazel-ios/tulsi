@@ -1062,6 +1062,10 @@ def _tulsi_sources_aspect(target, ctx):
         # else:
         #     module_name = None
 
+    if not bundle_id:
+        bundle_id = getattr(ctx.rule.attr, "bundle_id", None)
+    if not bundle_name:
+        bundle_name = getattr(ctx.rule.attr, "bundle_name", None)
     info = _struct_omitting_none(
         artifacts = artifacts,
         attr = _struct_omitting_none(**all_attributes),
