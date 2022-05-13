@@ -896,6 +896,13 @@ def _tulsi_sources_aspect(target, ctx):
 
     # Keys for attribute and inheritable_attributes keys must be kept in sync
     # with defines in Tulsi's RuleEntry.
+
+    # FIXME(rules_ios)
+    # Could probably find a way to link directly to rules_ios's link_dynamic attr
+    is_dynamic = _get_opt_attr(rule_attr, "is_dynamic")
+    if ctx.rule.kind == "apple_dynamic_framework_import":
+        is_dynamic = True
+
     attributes = _dict_omitting_none(
         copts = None if is_swift_library else expanded_copts,
         swiftc_opts= expanded_copts if is_swift_library else None,
@@ -910,7 +917,7 @@ def _tulsi_sources_aspect(target, ctx):
         entitlements=_get_label_attr(rule_attr, "entitlements.label"),
         provisioning_profile=_get_label_attr(rule_attr, "provisioning_profile.label"),
         weak_sdk_frameworks=_get_opt_attr(rule_attr, "weak_sdk_frameworks"),
-        is_dynamic=_get_opt_attr(rule_attr, "is_dynamic"),
+        is_dynamic=is_dynamic,
     )
 
     # Inheritable attributes are pulled up through dependencies of type 'binary'
