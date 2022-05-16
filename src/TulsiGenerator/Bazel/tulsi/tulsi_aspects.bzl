@@ -902,6 +902,10 @@ def _tulsi_sources_aspect(target, ctx):
     is_dynamic = _get_opt_attr(rule_attr, "is_dynamic")
     if ctx.rule.kind == "apple_dynamic_framework_import":
         is_dynamic = True
+    elif ctx.rule.kind == "apple_framework_packaging" and getattr(rule_attr, "link_dynamic", False):
+        is_dynamic = True
+    elif ctx.rule.kind == "ios_framework":
+        is_dynamic = True
 
     attributes = _dict_omitting_none(
         copts = None if is_swift_library else expanded_copts,
