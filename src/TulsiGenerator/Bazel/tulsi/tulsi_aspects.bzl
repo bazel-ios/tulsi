@@ -890,6 +890,9 @@ def _tulsi_sources_aspect(target, ctx):
     datamodels = _collect_xcdatamodeld_files(rule_attr, "datamodels")
     datamodels.extend(_collect_xcdatamodeld_files(rule_attr, "data"))
 
+    if ctx.rule.kind == "_precompiled_apple_resource_bundle":
+        datamodels.extend(_collect_xcdatamodeld_files(rule_attr, "resources"))
+
     structured_resources = _collect_resource_files(rule_attr, "data")
 
     expanded_copts = _expanded_copts(ctx, target, copts_attr)
