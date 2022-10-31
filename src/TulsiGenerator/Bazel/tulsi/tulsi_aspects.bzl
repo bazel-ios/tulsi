@@ -1315,7 +1315,7 @@ def _tulsi_outputs_aspect(target, ctx):
             archive_root = bundle_info.archive_root
             infoplist = bundle_info.infoplist
 
-        if hasattr(ctx.rule.attr, "deps"):
+        if hasattr(ctx.rule.attr, "deps") and not artifact:
             for dep in ctx.rule.attr.deps:
                 artifact = findArtifactInFiles(dep)
                 if artifact:
