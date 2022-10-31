@@ -1295,10 +1295,10 @@ def _tulsi_outputs_aspect(target, ctx):
     archive_root = None
     infoplist = None
 
-    def findArtifactInFiles(dep):
+    def findArtifactInFiles(target):
         artifacts = [
             x
-            for x in dep.files.to_list()
+            for x in target.files.to_list()
             if x.extension == "a"
         ]
         if len(artifacts) > 0:
