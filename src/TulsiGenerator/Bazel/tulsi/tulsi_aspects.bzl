@@ -1294,6 +1294,17 @@ def _tulsi_outputs_aspect(target, ctx):
     bundle_name = None
     archive_root = None
     infoplist = None
+
+    def findArtifactInFiles(target):
+        artifacts = [
+            x
+            for x in target.files.to_list()
+            if x.extension == "a"
+        ]
+        if len(artifacts) > 0:
+            return artifacts[0].path
+        return None
+
     if AppleBundleInfo in target:
         bundle_info = target[AppleBundleInfo]
 
@@ -1303,6 +1314,12 @@ def _tulsi_outputs_aspect(target, ctx):
             dsym_path = _bundle_dsym_path(bundle_info)
             archive_root = bundle_info.archive_root
             infoplist = bundle_info.infoplist
+
+        if hasattr(ctx.rule.attr, "deps"):
+            for dep in ctx.rule.attr.deps:
+                artifact = findArtifactInFiles(dep)
+                if artifact:
+                    break
 
         bundle_name = bundle_info.bundle_name
     elif AppleBinaryInfo in target:
@@ -1328,13 +1345,7 @@ def _tulsi_outputs_aspect(target, ctx):
     else:
         # Special support for *_library targets, which Tulsi allows building at
         # the top-level.
-        artifacts = [
-            x
-            for x in target.files.to_list()
-            if x.extension == "a"
-        ]
-        if len(artifacts) > 0:
-            artifact = artifacts[0].path
+        artifact = findArtifactInFiles(target)
 
     # Collect generated files for bazel_build.py to copy under Tulsi root.
     all_files_depsets = []
